@@ -74,7 +74,7 @@ async fn main() -> tide::Result<()> {
     app.at("/").get(move |_| async move {
 	Ok(serde_json::json!(["available features:", "add-user"
 		, "get-user", "delete-user", "add-group", "add-user-in-group", "delete-group"
-		, "make-santas", "get-santa" ]))
+	    , "add-admin", "make-santas", "get-santa" ]))
 
 	});
     app.at("/add-user").put(add);
@@ -99,8 +99,33 @@ async fn main() -> tide::Result<()> {
           }, 
           None => todo!(),   }
     Ok(tide::StatusCode::Ok)
-});
-app.at("/add-user-in-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
+    });
+    app.at("/add-admin").put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
+    let GroupRequest {username ,groupname} = request.body_json().await?;
+
+    let state = request.state();
+    let mut guard = state.lock().unwrap();
+    let mut flag=false;
+
+    if let Some(x) = guard.groups.get_mut(&groupname) {
+            if let Some(id) = x.users.get(&username) {
+                x.admins.insert(username,*id);
+            }
+            else {
+                flag=true;
+            }
+    }
+    else {
+        flag=true;
+     }
+    if !flag {
+        Ok(tide::StatusCode::Ok) 
+    }
+    else {
+        Ok(tide::StatusCode::NotFound) 
+    }
+    });
+    app.at("/add-user-in-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
     let GroupRequest {username ,groupname} = request.body_json().await?;
 
     let state = request.state();
