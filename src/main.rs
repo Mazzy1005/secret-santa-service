@@ -193,6 +193,24 @@ app.at("/delete-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| async m
                }
         Ok(tide::StatusCode::Ok)
         });
+    app.at("/get-santa").get(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
+        let GroupRequest {username ,groupname} = request.body_json().await?;
+
+        let state = request.state();
+        let guard = state.lock().unwrap();
+	let mut name = String::new();
+        if let Some(x) = guard.groups.get(&groupname) {
+                match x.santas.get(&username) {
+		    None => {name.push_str("no such user")},
+
+		    Some(uname) => {name.push_str(uname)},
+		        }
+                 }
+	else {
+	    name.push_str("no such group")
+	}
+	Ok(serde_json::json!({ "user": name }))
+});
     app.listen("127.0.0.1:8080").await?;
     Ok(())
 }
