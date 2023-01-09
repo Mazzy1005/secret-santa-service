@@ -74,7 +74,7 @@ async fn main() -> tide::Result<()> {
     app.at("/").get(move |_| async move {
 	Ok(serde_json::json!(["available features:", "add-user"
 		, "get-user", "delete-user", "add-group", "add-user-in-group", "delete-group"
-	    , "add-admin", "delete-admin-status", "make-santas", "get-santa" ]))
+	    , "add-admin", "leave-group", "delete-admin-status", "make-santas", "get-santa" ]))
 
 	});
     app.at("/add-user").put(add);
