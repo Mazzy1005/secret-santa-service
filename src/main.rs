@@ -71,7 +71,12 @@ async fn main() -> tide::Result<()> {
 
     let mut app = tide::with_state(state);
 
-    //app.at("/").get(move |_| async move {Ok(serde_json::json!({"message":hello }))});
+    app.at("/").get(move |_| async move {
+	Ok(serde_json::json!(["available features:", "add-user"
+		, "get-user", "delete-user", "add-group", "add-user-in-group", "delete-group"
+		, "make-santas", "get-santa" ]))
+
+	});
     app.at("/add-user").put(add);
     app.at("/add-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
     let GroupRequest {username ,groupname} = request.body_json().await?;
