@@ -99,6 +99,7 @@ app.at("/add-user-in-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| as
     let GroupRequest {username ,groupname} = request.body_json().await?;
 
     let state = request.state();
+    let mut flag=false;
     let mut guard = state.lock().unwrap();
     if guard.users.contains_key(&username) {
     let id=guard.users[&username];
@@ -106,10 +107,17 @@ app.at("/add-user-in-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| as
         if x.open {
             x.users.insert(username,id);
          }
+        else {
+             flag=true;
+         }
        }    
     }
-
-    Ok(tide::StatusCode::Ok)
+    if !flag {
+        Ok(tide::StatusCode::Ok) 
+    }
+    else {
+        Ok(tide::StatusCode::NotAcceptable) 
+    }
 });
 app.at("/delete-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
     let name: String = request.body_json().await?;
@@ -157,6 +165,33 @@ app.at("/delete-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| async m
                     format!("User {name} not found"),
                 )),
             }
+        });
+    app.at("/make-santas")
+        .put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
+            let GroupRequest {username ,groupname} = request.body_json().await?;
+
+            let state = request.state();
+            let mut guard = state.lock().unwrap();
+            if let Some(x) = guard.groups.get_mut(&groupname) {
+                if x.open {
+                    if x.admins.contains_key(&username) {
+                        x.open=false;
+                        if x.users.len()>1 {
+                            
+                            let mut vec: Vec<String>=x.users.clone().into_keys().collect();
+                            let first=vec[0].clone();
+                            let last=vec[vec.len()-1].clone();
+                            x.santas.insert(first,last);
+                            while vec.len() > 1 {
+                                let first=vec.pop().unwrap();
+				let last=vec[vec.len()-1].clone();
+                                x.santas.insert(first,last);
+                                }
+                            }
+                        }
+                 }
+               }
+        Ok(tide::StatusCode::Ok)
         });
     app.listen("127.0.0.1:8080").await?;
     Ok(())
