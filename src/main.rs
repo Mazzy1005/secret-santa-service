@@ -74,7 +74,7 @@ async fn main() -> tide::Result<()> {
     app.at("/").get(move |_| async move {
 	Ok(serde_json::json!(["available features:", "add-user"
 		, "get-user", "delete-user", "add-group", "add-user-in-group", "delete-group"
-	    , "add-admin", "make-santas", "get-santa" ]))
+	    , "add-admin", "delete-admin-status", "make-santas", "get-santa" ]))
 
 	});
     app.at("/add-user").put(add);
@@ -111,6 +111,37 @@ async fn main() -> tide::Result<()> {
             if let Some(id) = x.users.get(&username) {
                 x.admins.insert(username,*id);
             }
+            else {
+                flag=true;
+            }
+    }
+    else {
+        flag=true;
+     }
+    if !flag {
+        Ok(tide::StatusCode::Ok) 
+    }
+    else {
+        Ok(tide::StatusCode::NotFound) 
+    }
+    });
+    app.at("/delete-admin-status").put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
+    let GroupRequest {username ,groupname} = request.body_json().await?;
+
+    let state = request.state();
+    let mut guard = state.lock().unwrap();
+    let mut flag=false;
+
+    if let Some(x) = guard.groups.get_mut(&groupname) {
+            if let Some(id) = x.admins.get(&username) {
+                if x.admins.len()>1 {
+		    x.admins.remove(&username);
+		}
+		else {
+                    return Ok(tide::StatusCode::NotAcceptable); 
+                }
+            }
+	    
             else {
                 flag=true;
             }
