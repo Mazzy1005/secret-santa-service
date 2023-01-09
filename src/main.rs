@@ -125,6 +125,26 @@ async fn main() -> tide::Result<()> {
         Ok(tide::StatusCode::NotFound) 
     }
     });
+    app.at("/leave-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
+    let GroupRequest {username ,groupname} = request.body_json().await?;
+
+    let state = request.state();
+    let mut guard = state.lock().unwrap();
+
+    if let Some(x) = guard.groups.get_mut(&groupname) {
+            if let Some(id) = x.admins.get(&username) {
+                if x.admins.len()<2 {
+		    return Ok(tide::StatusCode::NotAcceptable);
+		}
+		else {
+		    x.admins.remove(&username);
+		}
+            }
+		x.users.remove(&username);
+    }
+    
+        Ok(tide::StatusCode::Ok) 
+    });
     app.at("/delete-admin-status").put(|mut request: Request<Arc<Mutex<DataBase>>>| async move {
     let GroupRequest {username ,groupname} = request.body_json().await?;
 
