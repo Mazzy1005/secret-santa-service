@@ -85,7 +85,7 @@ async fn main() -> tide::Result<()> {
             let mut g=Group{
                  users: HashMap::new(),
                  admins: HashMap::new(),
-                 open: false,
+                 open: true,
                  santas: HashMap::new(),
                 };
             g.users.insert(username.clone(),*id);
@@ -103,8 +103,10 @@ app.at("/add-user-in-group").put(|mut request: Request<Arc<Mutex<DataBase>>>| as
     if guard.users.contains_key(&username) {
     let id=guard.users[&username];
     if let Some(x) = guard.groups.get_mut(&groupname) {
-    x.users.insert(username,id);
-        }    
+        if x.open {
+            x.users.insert(username,id);
+         }
+       }    
     }
 
     Ok(tide::StatusCode::Ok)
